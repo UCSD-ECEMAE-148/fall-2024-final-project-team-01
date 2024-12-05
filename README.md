@@ -59,69 +59,123 @@ Team 1 Fall 2024
   </ol>
 </details>
 
+# Autonomous Penalty Kick Goalie
 
+## Overview
 
-<!-- TEAM MEMBERS -->
+This project focuses on developing a robot car capable of acting as an autonomous penalty kick goalie. Leveraging computer vision (CV) and a DepthAI framework, the robot detects and tracks a soccer ball, calculates its spatial coordinates, and responds to intercept the ball. By combining a PID controller with ROS2 nodes, the system outputs steering and throttle commands to the vehicle's VESC (Variable Electronic Speed Controller) for precise control.
+
+### **Key Features**
+- **Ball Tracking:** Detects and tracks the ball in real time using DepthAI and OpenCV algorithms.
+- **Depth and Angle Estimation:** Computes the ball's depth (distance) and horizontal angle relative to the robot.
+- **ROS2 Framework:** Publishes and subscribes to relevant data across custom ROS2 nodes for modular functionality.
+- **PID Control:** Implements a proportional-integral-derivative controller for accurate steering adjustments.
+- **Goalkeeper Behavior:** Waits for ball movement before executing intercept maneuvers, mimicking real penalty-kick rules.
+
+---
+
 ## Team Members
 
+| Name              | Major                      | Class       |
+|-------------------|----------------------------|-------------|
+| Abhi Sachdeva     | Electrical Engineering     | Class of 2025 |
+| Charles Lahey     | Mechanical Engineering     | Class of 2025 |
+| Evan Gibson       | Mechanical Engineering, Ctrls & Robotics | Class of 2025 |
+| Gautam Ganesh     | Mechanical Engineering     | Class of 2026 |
 
-<h4>Team Member Major and Class </h4>
-<ul>
-  <li>Abhi Sachdeva - Electrical Engineering - Class of 2025</li>
-  <li>Charles Lahey - Mechanical Engineering - Class of 2025</li>
-  <li>Evan Gibson - Mechanical Engineering, Ctrls & Robotics - Class of 2025</li>
-  <li>Gautam Ganesh - Mechanical Engineering - Class of 2026</li>
-</ul>
+---
 
-<!-- Final Project -->
-## Final Project
+## **Project Goals**
 
-Our project goal was to develop a prototype of a penalty kick goalie that could detect a ball intercept it to prevent a goal. We aimed to develop a ROS2 framework that could incorporate DepthAI spatial coordinates and transmit them to a PD controller to steer our car towards the ball.
+### **Core Objectives**
+1. **Ball Detection and Tracking:**
+   - Implement a tracking node that uses DepthAI to:
+     - Detect a circular object (soccer ball) in the frame.
+     - Publish:
+       - `Ball Depth`: Average distance between the ball and the robot in millimeters.
+       - `Ball Angle`: Horizontal offset angle from the robot's center.
+   - Display bounding boxes for visualization.
 
-<!-- Original Goals -->
-### Original Goals
-- Track Node
-  - This node will draw a bounding box around the soccerball and publish two variables to a topic
-    - `Ball Depth`: average distance between camera and ball pointcloud in millimeters
-    - `Ball Angle`: horizontal pixel value of center of ball
-- Controller Node
-  - This node will subscribe to the Track Nodes variables and publish VESC throttle and servo angle
-    -  `Throttle`: once a change in depth is detected, throttle will be output to max for 2 seconds
-    -  `Servo Angle`: the ball angle will continually be fed into a PID controller that will output a steering angle for the servo to follow in order to keep the ball centered in frame
--  VESC Node
-  - This node will subscribe to the controller variables and give commands to the VESC
+2. **Reactive Control:**
+   - Implement a controller node that:
+     - Monitors the ball's movement (change in depth).
+     - Executes PID-based steering adjustments to keep the ball centered in the frame.
+     - Outputs throttle and steering commands to the VESC.
 
-- NICE TO HAVE
-  - Instead of directly steering towards the ball, it would be nice to incorporate path prediction to intercept the ball
-    - Spatial coordinates would be used to track ball position and velocity which can be used to calculate future path
-    - Car dynamics can be used to calculate optimal path intercept location
+3. **Goalkeeper Rules:**
+   - Ensure the robot remains stationary until the ball begins moving (mimicking real penalty-kick rules).
+   - React swiftly to block the ball once it starts moving.
 
+### **Nice-to-Have Features**
+- **Path Prediction:**
+  - Use ball position and velocity data to predict the trajectory and intercept the ball optimally.
+  - Incorporate robot dynamics to determine the ideal intercept point.
+  
+---
 
-<!-- End Results -->
-### Goals We Met
-- [`ride_request_publisher.py`](src/ride_request_pkg/ride_request_pkg/ride_request_publisher.py): ride request node
-- [`user_input_interfaces`](src/user_input_interfaces/msg): custom interface definitions
-  - [`RideRequest.msg`](src/user_input_interfaces/msg/RideRequest.msg)
-  - [`RideMatch.msg`](src/user_input_interfaces/msg/RideMatch.msg)
-- [`face_rec_pkg`](src/face_rec_pkg/face_rec_pkg): face recognition package
-  - [`face_publisher.py`](src/face_rec_pkg/face_rec_pkg/face_publisher.py): face recognition node for publishing identified name and video stream
-  - [`verification_service.py`](src/face_rec_pkg/face_rec_pkg/verification_service.py): identity verification node
-  - GPS Navigation Training: DonkeyCar framework
+## **System Architecture**
 
-See [`README`](src/README.md) section in our `src` directory for breakdown of how our packages run together
+The project leverages a modular architecture, where each node in the ROS2 framework is responsible for specific tasks. 
 
-See [`README`](docker/README.md) section in our `docker` directory for breakdown of how to run the Docker container for our program with all dependencies built into the image
+### **Node Descriptions**
 
-### Our Hopes and Dreams
-#### Stretch Goal 1
-- Complete package integration with ROS
-  - We successfully trained our car in several different paths using GPS PointOneNav in DonkeyCar and storing the paths as `.csv` files
-  - Unfortunately we didn't have enough time to ROS-ify the Donkey GPS framework to run them from within our ROS/Robocar modules
+1. **Track Node**
+   - **Inputs:** Camera feed from OAK-D Lite.
+   - **Outputs:** 
+     - `Ball Depth` (distance in mm).
+     - `Ball Angle` (horizontal position in radians or degrees).
 
-#### Stretch Goal 2
-- LiDAR
-  - If our car is driving autonomously with GPS only, we would definitely activate the LiDAR to incorporate an emergency stop
-  - Object detection for collision avoidance on while driving on the pretrained GPS paths
+2. **Controller Node**
+   - **Inputs:** 
+     - `Ball Depth` and `Ball Angle` from the Track Node.
+   - **Outputs:**
+     - `Throttle`: Sends a signal to accelerate the vehicle when ball movement is detected.
+     - `Servo Angle`: Provides steering adjustments to align the robot with the ball.
+
+3. **VESC Node**
+   - **Inputs:** 
+     - `Throttle` and `Servo Angle` from the Controller Node.
+   - **Outputs:**
+     - Commands to the VESC for motor control.
+
+---
+
+## **Technologies Used**
+
+- **DepthAI:** For object detection, depth estimation, and spatial tracking of the soccer ball.
+- **OpenCV:** To process image frames and detect circular objects.
+- **ROS2:** Middleware framework for data publishing and subscribing between nodes.
+- **PID Controller:** Ensures smooth steering adjustments for ball tracking.
+- **VESC:** Controls the robot's drivetrain, providing precise throttle and steering.
+
+---
+
+## **How to Run**
+
+### **Prerequisites**
+- Install ROS2 (Humble or Foxy recommended).
+- Set up the DepthAI SDK.
+- Ensure the VESC is configured and calibrated.
+
+### **Steps**
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-repo/penalty-kick-goalie.git
+   cd penalty-kick-goalie
+2. Build the ROS2 workspace:
+   ```bash
+   colcon build
+3. Launch the system:
+   ```bash
+   source install/setup.bash
+   ros2 launch goalie_system.launch.py
+   
+## **Future Improvements**
+
+- Integrate a path prediction algorithm for smarter ball interception.
+- Enhance the PID controller for faster and smoother responses.
+- Explore deep learning-based ball detection for improved accuracy in varying lighting conditions.
+
 
 ### Final Project Documentation
 
